@@ -1,0 +1,535 @@
+"""
+SocialSynth-AI Streamlit Application
+
+This module contains the Streamlit UI implementation for SocialSynth-AI.
+"""
+
+import os
+import time
+import logging
+import webbrowser
+from typing import List, Dict, Any
+
+# Third-party imports
+import streamlit as st
+import networkx as nx
+import pandas as pd
+
+# LangChain imports
+from langchain.schema import Document
+
+# Import from other modules - we'll use relative imports when the package is structured
+from ..retrieval.enhanced_retriever import EnhancedRetriever
+from ..knowledge_graph.enhanced_builder import EnhancedKnowledgeGraphBuilder
+from ..generation.script_generator import generate_youtube_script
+from ..utils.api_keys import load_api_keys
+
+# Configure logging
+logger = logging.getLogger("socialsynth.ui")
+
+def setup_page():
+    """Configure the Streamlit page settings"""
+    st.set_page_config(
+        page_title="SocialSynth-AI",
+        page_icon="logo.png",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+def display_sidebar():
+    """Display application sidebar with logo and API key status"""
+    try:
+        st.sidebar.image("logo.png", width=250)
+        st.sidebar.title("SocialSynth-AI")
+        st.sidebar.markdown("Advanced Content Generation with Knowledge Graphs")
+        
+        st.sidebar.markdown("---")
+        
+        api_keys = load_api_keys()
+        keys_configured = all([api_keys.get("youtube_api_key"), api_keys.get("news_api_key")])
+        
+        if not keys_configured:
+            st.sidebar.warning("⚠️ API keys not fully configured. Please check your .env file.")
+            st.sidebar.markdown("""
+            **API Keys Required:**
+            - YouTube API Key
+            - News API Key
+            
+            Add these to your `.env` file to enable all features.
+            """)
+        else:
+            st.sidebar.success("✅ API keys configured")
+        
+        st.sidebar.markdown("---")
+        st.sidebar.info("Created by: Raza Abbas")
+    except Exception as e:
+        logger.error(f"Error displaying sidebar: {e}")
+        # Provide minimal sidebar if there's an error
+        st.sidebar.title("SocialSynth-AI")
+
+def knowledge_graph_tab():
+    """Display the knowledge graph tab"""
+    st.header("Build Knowledge Graph")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        query = st.text_input("Enter your search query:", placeholder="e.g., Artificial Intelligence in Healthcare")
+        
+        col1_1, col1_2, col1_3 = st.columns(3)
+        with col1_1:
+            max_results = st.slider("Max results per source:", 5, 30, 10)
+        with col1_2:
+            min_score = st.slider("Min relevance score:", 0.1, 1.0, 0.5)
+        with col1_3:
+            max_entities = st.slider("Max entities per doc:", 5, 50, 20)
+        
+        max_keywords = st.slider("Max keywords:", 10, 50, 30)
+        
+    with col2:
+        st.markdown("### Options")
+        open_browser = st.checkbox("Open in browser automatically", value=True)
+        include_analysis = st.checkbox("Generate detailed analysis", value=True)
+        use_external_builder = st.checkbox("Use external graph builder", value=False, 
+                                         help="Use advanced KnowledgeGraphBuilder instead of default")
+    
+    if st.button("Build Knowledge Graph", type="primary"):
+        if not query:
+            st.error("Search query required! Please enter what topic you want to explore.")
+            st.info("Try topics like 'Renewable Energy Technologies' or 'Future of Artificial Intelligence'")
+        else:
+            with st.spinner("Retrieving documents from various sources..."):
+                # Retrieve documents
+                api_keys = load_api_keys()
+                
+                retriever = EnhancedRetriever(
+                    youtube_api_key=api_keys.get("youtube_api_key"),
+                    news_api_key=api_keys.get("news_api_key"),
+                    max_results_per_source=max_results,
+                    min_relevance_score=min_score,
+                    include_entities=True
+                )
+                
+                documents = retriever.get_relevant_documents(query)
+                
+                if not documents:
+                    st.error("No relevant documents found for your query.")
+                    st.info("Try these suggestions: \n- Use more general keywords \n- Lower the 'Min relevance score' slider \n- Check API keys in your .env file")
+                else:
+                    st.success(f"Successfully retrieved {len(documents)} relevant documents!")
+                    
+                    with st.spinner("Building knowledge graph and extracting insights..."):
+                        try:
+                            # Build knowledge graph
+                            graph_builder = EnhancedKnowledgeGraphBuilder(
+                                max_entities_per_doc=max_entities,
+                                max_keywords=max_keywords,
+                                relevance_threshold=min_score
+                            )
+                            
+                            # Build graph
+                            graph = graph_builder.build_graph(documents, query)
+                            
+                            if graph.number_of_nodes() == 0:
+                                st.warning("Your knowledge graph is empty. This might be because:")
+                                st.markdown("""
+                                - Your topic might be too specific or niche
+                                - The entity extraction threshold is too high
+                                - Try increasing 'Max entities per doc' or decreasing 'Min relevance score'
+                                """)
+                            else:
+                                # Generate summary
+                                summary = graph_builder.get_graph_summary(graph)
+                                
+                                # Create visualization
+                                output_filename = f"knowledge_graph_{int(time.time())}.html"
+                                static_dir = "static"
+                                if not os.path.exists(static_dir):
+                                    os.makedirs(static_dir)
+                                
+                                output_path = os.path.join(static_dir, output_filename)
+                                title = f"Knowledge Graph for: {query}"
+                                vis_path = graph_builder.visualize(graph, output_path, title)
+                                
+                                # Display results
+                                st.success("Knowledge graph built successfully! Explore the insights below.")
+                                
+                                st.subheader("Knowledge Graph Summary")
+                                col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+                                col_s1.metric("Nodes", summary["node_count"])
+                                col_s2.metric("Edges", summary["edge_count"])
+                                col_s3.metric("Entity Types", len(summary.get("entity_types", {})))
+                                col_s4.metric("Top Keywords", len(summary.get("top_keywords", [])))
+                                
+                                st.subheader("Top Keywords")
+                                keywords_df = pd.DataFrame(
+                                    summary.get("top_keywords", []), 
+                                    columns=["Keyword", "Score"]
+                                )
+                                st.dataframe(keywords_df.head(10))
+                                
+                                if vis_path:
+                                    st.subheader("Visualization")
+                                    st.markdown(f"[Open Knowledge Graph Visualization]({vis_path})")
+                                    
+                                    if open_browser:
+                                        try:
+                                            webbrowser.open(vis_path)
+                                        except Exception as e:
+                                            st.warning("Browser couldn't be opened automatically. Click the link above to view your knowledge graph.")
+                                else:
+                                    st.warning("Visualization couldn't be generated. Try different parameters or check network connectivity.")
+                        except Exception as e:
+                            logger.error(f"Knowledge graph error: {e}")
+                            st.error("Error building knowledge graph")
+                            st.markdown(f"""
+                            **What happened**: {str(e)[:100]}...
+                            
+                            **Things to try**:
+                            - Use a simpler, more mainstream topic
+                            - Reduce the number of entities and keywords
+                            - Check your internet connection
+                            - Verify API keys are correctly set in your .env file
+                            """)
+
+def script_generator_tab():
+    """Display the script generator tab"""
+    st.header("Generate Content")
+    
+    query = st.text_input("Content Topic:", placeholder="e.g., The impact of AI on healthcare")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        tone = st.selectbox(
+            "Content Tone:",
+            ["Educational", "Entertaining", "Professional", "Conversational", "Dramatic"]
+        )
+    with col2:
+        length = st.selectbox(
+            "Content Length:",
+            ["Short (3-5 min)", "Medium (5-10 min)", "Long (10-15 min)"]
+        )
+    
+    include_sources = st.checkbox("Include sources in script", value=True)
+    
+    if st.button("Generate Script", type="primary"):
+        if not query:
+            st.error("Please enter a content topic")
+            st.info("Examples: 'Latest advancements in clean energy' or 'How AI is transforming education'")
+        else:
+            with st.spinner("Generating script..."):
+                try:
+                    script = generate_youtube_script(
+                        topic=query,
+                        tone=tone.lower(),
+                        length=length.split()[0].lower(),
+                        include_sources=include_sources
+                    )
+                    
+                    st.success("Script generated successfully!")
+                    st.text_area("Generated Script", script, height=400)
+                    
+                    script_file = f"script_{int(time.time())}.txt"
+                    with open(script_file, "w") as f:
+                        f.write(script)
+                    
+                    st.download_button(
+                        "Download Script",
+                        script,
+                        file_name=script_file,
+                        mime="text/plain"
+                    )
+                except Exception as e:
+                    logger.error(f"Script generation error: {e}")
+                    st.error("Script generation failed")
+                    st.markdown(f"""
+                    **What happened**: {str(e)[:100]}...
+                    
+                    **Things to try**:
+                    - Use a simpler, more mainstream topic
+                    - Try a different tone or length
+                    - Check your internet and API connections
+                    """)
+
+def documentation_tab():
+    """Display the documentation tab"""
+    st.header("Documentation")
+    
+    st.markdown("""
+    SocialSynth-AI provides comprehensive documentation to help you understand how the system works.
+    """)
+    
+    documentation_file = "SocialSynth-AI_Documentation.pdf"
+    
+    if os.path.exists(documentation_file):
+        st.success("Documentation is available")
+        
+        with open(documentation_file, "rb") as f:
+            st.download_button(
+                "Download Documentation PDF",
+                f,
+                file_name=documentation_file,
+                mime="application/pdf"
+            )
+    else:
+        st.warning("Documentation PDF not found")
+        
+        if st.button("Generate Documentation"):
+            with st.spinner("Generating documentation..."):
+                try:
+                    os.system("python documentation_generator.py")
+                    st.success("Documentation generated successfully!")
+                    st.rerun()
+                except Exception as e:
+                    logger.error(f"Documentation error: {e}")
+                    st.error("Documentation generation failed")
+                    st.markdown(f"""
+                    **Problem**: {str(e)[:100]}...
+                    
+                    **Try these steps**:
+                    - Check if documentation_generator.py exists in the project
+                    - Verify Python environment has all required dependencies
+                    - Check file permissions in the output directory
+                    """)
+
+def automated_workflow_tab():
+    """Display the automated workflow tab for one-click content creation"""
+    st.header("One-Click Content Creation")
+    
+    st.markdown("""
+    Provide a topic or upload a document, and SocialSynth-AI will automatically:
+    1. Retrieve relevant information from multiple sources
+    2. Build a knowledge graph with key entities and relationships
+    3. Generate a script based on trending topics and insights
+    4. Create documentation with sources and references
+    """)
+    
+    # Input methods
+    input_method = st.radio(
+        "Input Method:",
+        ["Enter Topic", "Upload Document"],
+        horizontal=True
+    )
+    
+    if input_method == "Enter Topic":
+        query = st.text_input("Enter your topic or script idea:", 
+                             placeholder="e.g., Latest breakthroughs in quantum computing")
+        document_file = None
+    else:
+        query = None
+        document_file = st.file_uploader("Upload a document (PDF, DOCX, TXT):", 
+                                        type=["pdf", "docx", "txt"])
+        
+        if document_file:
+            st.success(f"Uploaded: {document_file.name}")
+            
+    # Advanced options in expander
+    with st.expander("Advanced Options", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            tone = st.selectbox(
+                "Content Tone:",
+                ["Educational", "Entertaining", "Professional", "Conversational", "Dramatic"]
+            )
+            min_score = st.slider("Relevance threshold:", 0.1, 1.0, 0.5)
+        with col2:
+            length = st.selectbox(
+                "Content Length:",
+                ["Short (3-5 min)", "Medium (5-10 min)", "Long (10-15 min)"]
+            )
+            max_entities = st.slider("Max entities:", 10, 50, 30)
+    
+    # Process button
+    process_button = st.button("🚀 Generate Everything", type="primary")
+    
+    if process_button:
+        if not query and not document_file:
+            st.error("Please enter a topic or upload a document to proceed")
+        else:
+            # Process the input in a sequential workflow
+            with st.status("Processing your request...", expanded=True) as status:
+                try:
+                    # Step 1: Document retrieval
+                    st.write("🔍 Retrieving relevant documents...")
+                    api_keys = load_api_keys()
+                    
+                    retriever = EnhancedRetriever(
+                        youtube_api_key=api_keys.get("youtube_api_key"),
+                        news_api_key=api_keys.get("news_api_key"),
+                        max_results_per_source=15,
+                        min_relevance_score=min_score,
+                        include_entities=True
+                    )
+                    
+                    # If we have a document file, process it
+                    if document_file:
+                        # Extract text from document
+                        from ..utils.document_processor import extract_text_from_document
+                        document_text = extract_text_from_document(document_file)
+                        query = document_text[:500]  # Use first 500 chars as query
+                    
+                    documents = retriever.get_relevant_documents(query)
+                    
+                    if not documents:
+                        status.update(label="Error: No relevant documents found", state="error")
+                        st.error("No relevant documents found for your query. Try modifying your topic.")
+                        return
+                    
+                    st.write(f"✅ Retrieved {len(documents)} relevant documents")
+                    
+                    # Step 2: Build knowledge graph
+                    st.write("🔄 Building knowledge graph...")
+                    graph_builder = EnhancedKnowledgeGraphBuilder(
+                        max_entities_per_doc=max_entities,
+                        max_keywords=30,
+                        relevance_threshold=min_score
+                    )
+                    
+                    # Build graph
+                    graph = graph_builder.build_graph(documents, query)
+                    
+                    if graph.number_of_nodes() == 0:
+                        st.warning("Knowledge graph is empty. Adjusting parameters and retrying...")
+                        graph_builder = EnhancedKnowledgeGraphBuilder(
+                            max_entities_per_doc=50,  # Increase entities
+                            max_keywords=50,         # Increase keywords
+                            relevance_threshold=min_score/2  # Lower threshold
+                        )
+                        graph = graph_builder.build_graph(documents, query)
+                    
+                    # Generate visualization
+                    output_filename = f"knowledge_graph_{int(time.time())}.html"
+                    static_dir = "static"
+                    if not os.path.exists(static_dir):
+                        os.makedirs(static_dir)
+                    
+                    output_path = os.path.join(static_dir, output_filename)
+                    title = f"Knowledge Graph for: {query[:50]}..."
+                    vis_path = graph_builder.visualize(graph, output_path, title)
+                    
+                    # Get graph summary
+                    summary = graph_builder.get_graph_summary(graph)
+                    st.write(f"✅ Knowledge graph built with {summary['node_count']} nodes and {summary['edge_count']} edges")
+                    
+                    # Step 3: Generate script
+                    st.write("📝 Generating content script...")
+                    
+                    # Convert length to proper format
+                    script_length = length.split()[0].lower()
+                    
+                    script = generate_youtube_script(
+                        topic=query,
+                        tone=tone.lower(),
+                        length=script_length,
+                        include_sources=True,
+                        knowledge_graph=graph  # Pass the graph as context
+                    )
+                    
+                    script_file = f"script_{int(time.time())}.txt"
+                    with open(script_file, "w") as f:
+                        f.write(script)
+                    
+                    st.write("✅ Script generated successfully")
+                    
+                    # Step 4: Generate documentation
+                    st.write("📄 Creating documentation...")
+                    from ..utils.documentation_generator import generate_documentation
+                    
+                    doc_data = {
+                        "topic": query,
+                        "graph_summary": summary,
+                        "documents": documents,
+                        "script": script,
+                        "visualization_path": vis_path
+                    }
+                    
+                    doc_file = generate_documentation(doc_data)
+                    
+                    st.write("✅ Documentation created")
+                    status.update(label="Process completed successfully!", state="complete")
+                    
+                    # Display results
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.subheader("Knowledge Graph")
+                        st.markdown(f"[Open Interactive Knowledge Graph]({vis_path})")
+                        
+                        st.subheader("Top Keywords")
+                        keywords_df = pd.DataFrame(
+                            summary.get("top_keywords", []), 
+                            columns=["Keyword", "Score"]
+                        )
+                        st.dataframe(keywords_df.head(10))
+                    
+                    with col2:
+                        st.subheader("Generated Script")
+                        st.download_button(
+                            "Download Script",
+                            script,
+                            file_name=script_file,
+                            mime="text/plain"
+                        )
+                        
+                        st.subheader("Documentation")
+                        with open(doc_file, "rb") as f:
+                            st.download_button(
+                                "Download Documentation PDF",
+                                f,
+                                file_name=os.path.basename(doc_file),
+                                mime="application/pdf"
+                            )
+                
+                except Exception as e:
+                    logger.error(f"Automated workflow error: {e}")
+                    status.update(label=f"Error: {str(e)[:50]}...", state="error")
+                    st.error("An error occurred during processing")
+                    st.markdown(f"""
+                    **What happened**: {str(e)[:150]}...
+                    
+                    **Things to try**:
+                    - Try a different topic or document
+                    - Check your API connections and keys
+                    - Ensure all dependencies are installed
+                    """)
+
+def main():
+    """Main application function that sets up the Streamlit UI"""
+    try:
+        setup_page()
+        display_sidebar()
+        
+        st.title("SocialSynth-AI")
+        st.subheader("Knowledge Graph Builder & Content Generator")
+        
+        tabs = st.tabs(["One-Click Content", "Knowledge Graph", "Script Generator", "Documentation"])
+        
+        with tabs[0]:
+            automated_workflow_tab()
+        
+        with tabs[1]:
+            knowledge_graph_tab()
+        
+        with tabs[2]:
+            script_generator_tab()
+        
+        with tabs[3]:
+            documentation_tab()
+            
+    except Exception as e:
+        logger.error(f"Error in main function: {e}")
+        st.error("Application encountered an error")
+        st.markdown(f"""
+        **Something went wrong with SocialSynth-AI**
+        
+        Please try these steps:
+        1. Refresh the page and try again
+        2. Check that your .env file contains all required API keys
+        3. Verify your internet connection
+        4. If the problem persists, check the log file at socialsynth.log
+        
+        Error details: {str(e)[:150]}...
+        """)
+
+if __name__ == "__main__":
+    main() 

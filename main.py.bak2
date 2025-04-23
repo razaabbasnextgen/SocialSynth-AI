@@ -1,0 +1,186 @@
+import streamlit as st
+import os
+import sys
+import time
+import logging
+import asyncio
+from dotenv import load_dotenv
+from typing import TypedDict, List, Dict, Any, Optional
+
+# Import components from modular files
+from src.embeddings import get_embeddings
+from src.retrieval import process_query, ingest_content
+from src.visualization import render_dashboard, visualize_knowledge_graph
+from src.data_fetchers import fetch_all_external_data
+from src.circuit_breaker import CircuitBreaker
+from src.app_state import AppState
+from src.ui_components import create_sidebar, create_input_form, render_results
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("logs/app.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("socialsynth")
+
+# Load environment variables
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
+CX = os.getenv("CX")
+
+# Initialize circuit breakers
+from src.services import initialize_services, circuit_breakers
+
+# Set up event loop for async operations
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+def main():
+    """Main application entry point"""
+    # Set page config
+    st.set_page_config(
+        page_title="SocialSynth AI",
+        page_icon="🧠",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Add custom CSS
+    st.markdown("""
+    <style>
+    .stApp {
+        background-color: #f5f7f9;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #f0f2f6;
+        border-radius: 4px 4px 0px 0px;
+        gap: 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #e0e5ec;
+        border-bottom: 2px solid #4CAF50;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create sidebar with configuration options
+    sidebar_values = create_sidebar(circuit_breakers)
+    
+    # Main content area
+    st.title("SocialSynth AI - Content Generation")
+    
+    # Create input form for query and parameters
+    form_values, submit_button = create_input_form()
+    
+    # Process form submission
+    if submit_button and form_values["query"]:
+        # Initialize state with form values
+        state = AppState(
+            query=form_values["query"],
+            tone=form_values["tone"],
+            format_type=form_values["format_type"],
+            script_length={"very short": 1, "short": 2, "medium": 3, "long": 4, "very long": 5}[form_values["length"]],
+            errors=[],
+            sources_used={},
+            reasoning_chain=[]
+        )
+        
+        # Show progress
+        with st.status("Processing your request...", expanded=True) as status:
+            try:
+                # Process the query with selected features
+                if "Query Decomposition" in sidebar_values["advanced_features"]:
+                    st.write("Decomposing query...")
+                    from src.advanced_rag import decompose_query
+                    state["queries"] = decompose_query(form_values["query"])
+                else:
+                    state["queries"] = [form_values["query"]]
+                
+                # Fetch external data
+                st.write("Fetching latest information...")
+                external_data = asyncio.run(fetch_all_external_data(
+                    form_values["query"], 
+                    GOOGLE_API_KEY, 
+                    NEWSAPI_KEY, 
+                    CX,
+                    circuit_breakers
+                ))
+                
+                # Track sources
+                for source, data in external_data.items():
+                    state["sources_used"][source] = len(data)
+                
+                # Process and ingest external data
+                st.write("Processing information...")
+                all_docs = []
+                
+                # Ingest data from various sources
+                from src.data_processors import process_news, process_youtube, process_blogs
+                all_docs.extend(process_news(external_data["news"]))
+                all_docs.extend(process_youtube(external_data["youtube"]))
+                all_docs.extend(process_blogs(external_data["blogs"]))
+                
+                # Retrieve content
+                st.write("Retrieving relevant information...")
+                query_results = process_query(
+                    form_values["query"], 
+                    retrieval_k=sidebar_values["retrieval_k"],
+                    similarity_threshold=sidebar_values["similarity_threshold"],
+                    use_knowledge_graph="Multi-hop Retrieval" in sidebar_values["advanced_features"]
+                )
+                state["docs"] = query_results["docs"]
+                
+                # Track performance metrics
+                state["performance_metrics"] = {
+                    "retrieval_time": query_results["retrieval_time"],
+                    "doc_count": len(state["docs"]),
+                    "history": [
+                        {
+                            "timestamp": time.strftime("%H:%M:%S"),
+                            "retrieval_time": query_results["retrieval_time"],
+                            "doc_count": len(state["docs"])
+                        }
+                    ]
+                }
+                
+                # Extract entities if enabled
+                if "Entity Extraction" in sidebar_values["advanced_features"]:
+                    st.write("Analyzing entities and relationships...")
+                    from src.entity_processing import extract_entities
+                    state["entity_map"] = extract_entities(state["docs"])
+                    
+                    # Create and cache visualization
+                    from src.knowledge_graph import get_knowledge_graph
+                    st.session_state.graph_data = visualize_knowledge_graph(get_knowledge_graph())
+                
+                # Mark as complete
+                status.update(label="Content processed successfully!", state="complete")
+            
+            except Exception as e:
+                logger.error(f"Error processing content: {e}", exc_info=True)
+                state["errors"].append(str(e))
+                status.update(label=f"Error: {str(e)}", state="error")
+        
+        # If successful, display results
+        if not state["errors"]:
+            render_results(state)
+        else:
+            # Show error details
+            st.error("An error occurred while processing your request.")
+            st.write(state["errors"])
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,1 @@
+"""Document retrieval functionality for SocialSynth-AI.""" 

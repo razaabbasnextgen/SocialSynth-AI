@@ -1,0 +1,133 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 700px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+
+                <center>
+                <h2>Enhanced Knowledge Graph Visualization</h2>
+                <p>This interactive visualization shows entities, concepts, and their relationships extracted from the documents.</p>
+                </center>
+                
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"group": "document", "id": "doc_1", "label": "Sample Document", "shape": "dot", "title": "Sample Document"}, {"group": "entity", "id": "entity_1", "label": "Entity 1", "shape": "dot", "title": "Entity 1"}, {"group": "entity", "id": "entity_2", "label": "Entity 2", "shape": "dot", "title": "Entity 2"}, {"group": "entity", "id": "entity_3", "label": "Entity 3", "shape": "dot", "title": "Entity 3"}, {"group": "concept", "id": "concept_1", "label": "Concept 1", "shape": "dot", "title": "Concept 1"}, {"group": "concept", "id": "concept_2", "label": "Concept 2", "shape": "dot", "title": "Concept 2"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "color": "#666666", "from": "doc_1", "label": "contains", "title": "contains", "to": "entity_1", "width": 5.0}, {"arrows": "to", "color": "#666666", "from": "doc_1", "label": "contains", "title": "contains", "to": "entity_2", "width": 5.0}, {"arrows": "to", "color": "#666666", "from": "doc_1", "label": "contains", "title": "contains", "to": "entity_3", "width": 5.0}, {"arrows": "to", "color": "#666666", "from": "entity_1", "label": "related to", "title": "related to", "to": "concept_1", "width": 5.0}, {"arrows": "to", "color": "#666666", "from": "entity_2", "label": "defines", "title": "defines", "to": "concept_1", "width": 5.0}, {"arrows": "to", "color": "#666666", "from": "entity_3", "label": "part of", "title": "part of", "to": "concept_2", "width": 5.0}, {"arrows": "to", "color": "#666666", "from": "concept_1", "label": "includes", "title": "includes", "to": "concept_2", "width": 5.0}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"physics": {"solver": "forceAtlas2Based", "forceAtlas2Based": {"gravitationalConstant": -120, "centralGravity": 0.01, "springLength": 180, "springConstant": 0.1, "damping": 0.3, "avoidOverlap": 1.0}, "stabilization": {"enabled": true, "iterations": 1500, "updateInterval": 25}}, "interaction": {"navigationButtons": true, "keyboard": {"enabled": true, "speed": {"x": 10, "y": 10, "zoom": 0.1}}, "tooltipDelay": 200, "hideEdgesOnDrag": true, "multiselect": true, "dragNodes": true, "hover": true}, "edges": {"smooth": {"type": "continuous", "forceDirection": "none"}, "arrows": {"to": {"enabled": true, "scaleFactor": 0.5}}, "color": {"inherit": false, "color": "#666666", "opacity": 0.8}, "font": {"size": 12, "align": "middle"}}, "nodes": {"shape": "dot", "font": {"size": 14, "face": "Arial", "bold": false}, "borderWidth": 2, "shadow": true}, "groups": {"document": {"color": "#3498db", "shape": "square", "size": 25}, "concept": {"color": "#2ecc71", "size": 15}, "person": {"color": "#e74c3c", "size": 20}, "organization": {"color": "#f39c12", "size": 20}, "location": {"color": "#9b59b6", "size": 18}, "event": {"color": "#1abc9c", "size": 18}, "date": {"color": "#34495e", "size": 18}, "action": {"color": "#e67e22", "size": 15}, "other": {"color": "#95a5a6", "size": 15}}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

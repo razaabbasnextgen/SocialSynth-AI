@@ -1,0 +1,258 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 750px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 750px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#6495ED", "id": "doc_-4591769649304766679", "label": "doc_-4591769649304766679", "shape": "dot", "size": 20, "title": "YOUTUBE VIDEO: \ud83d\ude31 What\u0027s Going On?\ud83d\ude80 ? Latest Crypto Market Analysis BTC News Updates Today \ud83d\udcca\n\nChannel: AL MAKKAH TECH \u0026 BUSINESS HUB\n\nDescription: \ud83d\ude31 Wh..."}, {"color": "#9370DB", "id": "entity_youtube", "label": "entity_youtube", "shape": "dot", "size": 15, "title": "YOUTUBE (ORG)"}, {"color": "#9370DB", "id": "entity_al makkah tech \u0026 business hub\n\ndescription", "label": "entity_al makkah tech \u0026 business hub\n\ndescription", "shape": "dot", "size": 15, "title": "AL MAKKAH TECH \u0026 BUSINESS HUB\n\nDescription (ORG)"}, {"color": "#3CB371", "id": "entity_tomorrow", "label": "entity_tomorrow", "shape": "dot", "size": 15, "title": "tomorrow (DATE)"}, {"color": "#3CB371", "id": "entity_today", "label": "entity_today", "shape": "dot", "size": 15, "title": "today (DATE)"}, {"color": "#FFA500", "id": "entity_bitcoin", "label": "entity_bitcoin", "shape": "dot", "size": 15, "title": "Bitcoin (NORP)"}, {"color": "#9370DB", "id": "entity_solana", "label": "entity_solana", "shape": "dot", "size": 15, "title": "Solana (GPE)"}, {"color": "#9370DB", "id": "entity_xrp, ethereum", "label": "entity_xrp, ethereum", "shape": "dot", "size": 15, "title": "XRP, Ethereum (ORG)"}, {"color": "#3CB371", "id": "entity_daily", "label": "entity_daily", "shape": "dot", "size": 15, "title": "daily (DATE)"}, {"color": "#9370DB", "id": "entity_bitcoinnews", "label": "entity_bitcoinnews", "shape": "dot", "size": 15, "title": "BitcoinNews (ORG)"}, {"color": "#FFA500", "id": "entity_#", "label": "entity_#", "shape": "dot", "size": 15, "title": "# (CARDINAL)"}, {"color": "#3CB371", "id": "entity_2025", "label": "entity_2025", "shape": "dot", "size": 15, "title": "2025 (MONEY)"}, {"color": "#9370DB", "id": "entity_china", "label": "entity_china", "shape": "dot", "size": 15, "title": "China (GPE)"}, {"color": "#9370DB", "id": "entity_ethereum", "label": "entity_ethereum", "shape": "dot", "size": 15, "title": "Ethereum (PERSON)"}, {"color": "#9370DB", "id": "entity_almakkahtech", "label": "entity_almakkahtech", "shape": "dot", "size": 15, "title": "Almakkahtech (PERSON)"}, {"color": "#9370DB", "id": "entity_barter partnership", "label": "entity_barter partnership", "shape": "dot", "size": 15, "title": "Barter Partnership (ORG)"}, {"color": "#9370DB", "id": "entity_complete kyc", "label": "entity_complete kyc", "shape": "dot", "size": 15, "title": "Complete KYC (PERSON)"}, {"color": "#9370DB", "id": "entity_crypto premium group", "label": "entity_crypto premium group", "shape": "dot", "size": 15, "title": "Crypto premium Group (ORG)"}, {"color": "#9370DB", "id": "entity_email", "label": "entity_email", "shape": "dot", "size": 15, "title": "Email (PERSON)"}, {"color": "#9370DB", "id": "entity_https://www.youtube.com/c/almakkahtechbyusmanhussain\n ", "label": "entity_https://www.youtube.com/c/almakkahtechbyusmanhussain\n ", "shape": "dot", "size": 15, "title": "https://www.youtube.com/c/ALMAKKAHTECHBYUSMANHUSSAIN\n  (PERSON)"}, {"color": "#9370DB", "id": "entity_al makkah tech", "label": "entity_al makkah tech", "shape": "dot", "size": 15, "title": "AL MAKKAH TECH (ORG)"}, {"color": "#FFA500", "id": "entity_5443", "label": "entity_5443", "shape": "dot", "size": 15, "title": "5443 (CARDINAL)"}, {"color": "#9370DB", "id": "entity_bitcoin (btc),", "label": "entity_bitcoin (btc),", "shape": "dot", "size": 15, "title": "Bitcoin (BTC), (ORG)"}, {"color": "#9370DB", "id": "entity_xrp", "label": "entity_xrp", "shape": "dot", "size": 15, "title": "XRP (ORG)"}, {"color": "#6495ED", "id": "doc_9213913008728259454", "label": "doc_9213913008728259454", "shape": "dot", "size": 20, "title": "YOUTUBE VIDEO: Treasure NFT On Crypto Wallet | Treasure NFT Withdrawal \ud83d\udcb5\ud83d\udd25 | Treasure NFT new update | Scam or Real\n\nChannel: Aizaz Engineer\n\nDescripti..."}, {"color": "#9370DB", "id": "entity_crypto wallet", "label": "entity_crypto wallet", "shape": "dot", "size": 15, "title": "Crypto Wallet (PERSON)"}, {"color": "#9370DB", "id": "entity_nft", "label": "entity_nft", "shape": "dot", "size": 15, "title": "NFT (ORG)"}, {"color": "#9370DB", "id": "entity_scam", "label": "entity_scam", "shape": "dot", "size": 15, "title": "Scam (PERSON)"}, {"color": "#FFA500", "id": "entity_3rd", "label": "entity_3rd", "shape": "dot", "size": 15, "title": "3rd (ORDINAL)"}, {"color": "#9370DB", "id": "entity_telegram", "label": "entity_telegram", "shape": "dot", "size": 15, "title": "Telegram (ORG)"}, {"color": "#FFA500", "id": "entity_2nd", "label": "entity_2nd", "shape": "dot", "size": 15, "title": "2nd (ORDINAL)"}, {"color": "#9370DB", "id": "entity_facebook:- https://www.facebook.com/profile.php?id=100008836147089", "label": "entity_facebook:- https://www.facebook.com/profile.php?id=100008836147089", "shape": "dot", "size": 15, "title": "Facebook:- https://www.facebook.com/profile.php?id=100008836147089 (PERSON)"}, {"color": "#3CB371", "id": "entity_#treasurenftwithdrawalbankaccount #", "label": "entity_#treasurenftwithdrawalbankaccount #", "shape": "dot", "size": 15, "title": "#treasurenftwithdrawalbankaccount # (MONEY)"}, {"color": "#9370DB", "id": "entity_alhamdulillah", "label": "entity_alhamdulillah", "shape": "dot", "size": 15, "title": "ALHAMDULILLAH (ORG)"}, {"color": "#3CB371", "id": "entity_30450", "label": "entity_30450", "shape": "dot", "size": 15, "title": "30450 (DATE)"}, {"color": "#9370DB", "id": "entity_pi network", "label": "entity_pi network", "shape": "dot", "size": 15, "title": "Pi Network (ORG)"}, {"color": "#9370DB", "id": "entity_binance", "label": "entity_binance", "shape": "dot", "size": 15, "title": "Binance (GPE)"}, {"color": "#FFA500", "id": "entity_30,450", "label": "entity_30,450", "shape": "dot", "size": 15, "title": "30,450 (CARDINAL)"}, {"color": "#9370DB", "id": "entity_social media promotion:*", "label": "entity_social media promotion:*", "shape": "dot", "size": 15, "title": "Social Media Promotion:* (ORG)"}, {"color": "#6495ED", "id": "doc_-3132214061749869150", "label": "doc_-3132214061749869150", "shape": "dot", "size": 20, "title": "YOUTUBE VIDEO: Treasure Nft New Update Today | Treasure Nft | Treasure Nft Full Detail | Nft | Crypto News Today\n\nChannel: Global Rashid\n\nDescription:..."}, {"color": "#9370DB", "id": "entity_treasure nft new update", "label": "entity_treasure nft new update", "shape": "dot", "size": 15, "title": "Treasure Nft New Update (ORG)"}, {"color": "#9370DB", "id": "entity_treasure nft", "label": "entity_treasure nft", "shape": "dot", "size": 15, "title": "Treasure Nft (PERSON)"}, {"color": "#9370DB", "id": "entity_treasure nft full detail", "label": "entity_treasure nft full detail", "shape": "dot", "size": 15, "title": "Treasure Nft Full Detail (PERSON)"}, {"color": "#9370DB", "id": "entity_crypto news", "label": "entity_crypto news", "shape": "dot", "size": 15, "title": "Crypto News (PERSON)"}, {"color": "#9370DB", "id": "entity_hai ek", "label": "entity_hai ek", "shape": "dot", "size": 15, "title": "hai ek (ORG)"}, {"color": "#9370DB", "id": "entity_tuft token", "label": "entity_tuft token", "shape": "dot", "size": 15, "title": "Tuft Token (PERSON)"}, {"color": "#9370DB", "id": "entity_ke baare mein", "label": "entity_ke baare mein", "shape": "dot", "size": 15, "title": "ke baare mein (PERSON)"}, {"color": "#9370DB", "id": "entity_dekhne ko milega:-", "label": "entity_dekhne ko milega:-", "shape": "dot", "size": 15, "title": "Dekhne ko milega:- (PERSON)"}, {"color": "#9370DB", "id": "entity_hai", "label": "entity_hai", "shape": "dot", "size": 15, "title": "hai (GPE)"}, {"color": "#9370DB", "id": "entity_mein ho", "label": "entity_mein ho", "shape": "dot", "size": 15, "title": "mein ho (PERSON)"}, {"color": "#9370DB", "id": "entity_ya nfts mein smart", "label": "entity_ya nfts mein smart", "shape": "dot", "size": 15, "title": "ya NFTs mein smart (PERSON)"}, {"color": "#9370DB", "id": "entity_ho", "label": "entity_ho", "shape": "dot", "size": 15, "title": "ho (PERSON)"}, {"color": "#9370DB", "id": "entity_yeh", "label": "entity_yeh", "shape": "dot", "size": 15, "title": "yeh (PERSON)"}, {"color": "#9370DB", "id": "entity_ko", "label": "entity_ko", "shape": "dot", "size": 15, "title": "ko (PERSON)"}, {"color": "#9370DB", "id": "entity_best crypto exchange", "label": "entity_best crypto exchange", "shape": "dot", "size": 15, "title": "Best Crypto Exchange (ORG)"}, {"color": "#9370DB", "id": "entity_crypto nft", "label": "entity_crypto nft", "shape": "dot", "size": 15, "title": "Crypto Nft (PERSON)"}, {"color": "#9370DB", "id": "entity_update video\ntreasure nft solana address update", "label": "entity_update video\ntreasure nft solana address update", "shape": "dot", "size": 15, "title": "Update Video\nTreasure Nft Solana Address Update (ORG)"}, {"color": "#9370DB", "id": "entity_buy crypto\ncrypto market", "label": "entity_buy crypto\ncrypto market", "shape": "dot", "size": 15, "title": "Buy Crypto\nCrypto Market (PERSON)"}, {"color": "#FFA500", "id": "entity_48068", "label": "entity_48068", "shape": "dot", "size": 15, "title": "48068 (CARDINAL)"}, {"color": "#FFA500", "id": "entity_treasure nft real or fake", "label": "entity_treasure nft real or fake", "shape": "dot", "size": 15, "title": "Treasure NFT Real or Fake (WORK_OF_ART)"}, {"color": "#FFA500", "id": "entity_treasure nft scam or not", "label": "entity_treasure nft scam or not", "shape": "dot", "size": 15, "title": "Treasure NFT Scam or Not (WORK_OF_ART)"}, {"color": "#9370DB", "id": "entity_tuft", "label": "entity_tuft", "shape": "dot", "size": 15, "title": "TUFT (ORG)"}, {"color": "#9370DB", "id": "entity_twitter", "label": "entity_twitter", "shape": "dot", "size": 15, "title": "Twitter (PERSON)"}, {"color": "#6495ED", "id": "doc_-3472005346782005771", "label": "doc_-3472005346782005771", "shape": "dot", "size": 20, "title": "YOUTUBE VIDEO: Pi Network New Update | Pi Network | Pi Coin | Pi | Crypto Trading | Pi Coin Update | Crypto News\n\nChannel: Global Rashid\n\nDescription:..."}, {"color": "#9370DB", "id": "entity_pi network new update", "label": "entity_pi network new update", "shape": "dot", "size": 15, "title": "Pi Network New Update (ORG)"}, {"color": "#9370DB", "id": "entity_pi coin", "label": "entity_pi coin", "shape": "dot", "size": 15, "title": "Pi Coin (ORG)"}, {"color": "#9370DB", "id": "entity_crypto trading", "label": "entity_crypto trading", "shape": "dot", "size": 15, "title": "Crypto Trading (PERSON)"}, {"color": "#9370DB", "id": "entity_pi coin update", "label": "entity_pi coin update", "shape": "dot", "size": 15, "title": "Pi Coin Update (ORG)"}, {"color": "#9370DB", "id": "entity_pi", "label": "entity_pi", "shape": "dot", "size": 15, "title": "Pi (ORG)"}, {"color": "#FFA500", "id": "entity_108 millions", "label": "entity_108 millions", "shape": "dot", "size": 15, "title": "108 millions (CARDINAL)"}, {"color": "#9370DB", "id": "entity_hai ki pi coin ka", "label": "entity_hai ki pi coin ka", "shape": "dot", "size": 15, "title": "hai ki Pi coin ka (ORG)"}, {"color": "#9370DB", "id": "entity_complete", "label": "entity_complete", "shape": "dot", "size": 15, "title": "Complete (ORG)"}, {"color": "#9370DB", "id": "entity_dekhiye pi network", "label": "entity_dekhiye pi network", "shape": "dot", "size": 15, "title": "dekhiye pi network (ORG)"}, {"color": "#9370DB", "id": "entity_kafi", "label": "entity_kafi", "shape": "dot", "size": 15, "title": "kafi (GPE)"}, {"color": "#3CB371", "id": "entity_queries:-", "label": "entity_queries:-", "shape": "dot", "size": 15, "title": "Queries:- (DATE)"}, {"color": "#9370DB", "id": "entity_pi\npi network", "label": "entity_pi\npi network", "shape": "dot", "size": 15, "title": "pi\npi network (ORG)"}, {"color": "#9370DB", "id": "entity_pi\npi network kyc verification\npi network latest news\npi coin global effect\npi network challanges\npi network coin\npi coin listing\npi coin update\npi network launch", "label": "entity_pi\npi network kyc verification\npi network latest news\npi coin global effect\npi network challanges\npi network coin\npi coin listing\npi coin update\npi network launch", "shape": "dot", "size": 15, "title": "pi\npi network kyc verification\npi network latest news\npi coin global effect\npi network challanges\npi network coin\npi coin listing\npi coin update\npi network launch (ORG)"}, {"color": "#3CB371", "id": "entity_11184", "label": "entity_11184", "shape": "dot", "size": 15, "title": "11184 (DATE)"}, {"color": "#FFA500", "id": "entity_108 million", "label": "entity_108 million", "shape": "dot", "size": 15, "title": "108 million (CARDINAL)"}, {"color": "#FFA500", "id": "entity_11,184", "label": "entity_11,184", "shape": "dot", "size": 15, "title": "11,184 (CARDINAL)"}, {"color": "#6495ED", "id": "doc_4057818637348847903", "label": "doc_4057818637348847903", "shape": "dot", "size": 20, "title": "YOUTUBE VIDEO: Treasure NFT Withdrawal \ud83d\udcb5\ud83d\udd25 | Treasure NFT new update | Treasure NFT on crypto wallet | Scam or real\n\nChannel: Aizaz Engineer\n\nDescripti..."}, {"color": "#3CB371", "id": "entity_42166", "label": "entity_42166", "shape": "dot", "size": 15, "title": "42166 (DATE)"}, {"color": "#6495ED", "id": "doc_-6053154265852359881", "label": "doc_-6053154265852359881", "shape": "dot", "size": 20, "title": "NEWS ARTICLE: \u26a1 THN Weekly Recap: iOS Zero-Days, 4Chan Breach, NTLM Exploits, WhatsApp Spyware \u0026 More\n\nSource: Internet\n\nExcerpt: Can a harmless click..."}, {"color": "#9370DB", "id": "entity_thn weekly", "label": "entity_thn weekly", "shape": "dot", "size": 15, "title": "THN Weekly (ORG)"}, {"color": "#3CB371", "id": "entity_zero-days", "label": "entity_zero-days", "shape": "dot", "size": 15, "title": "Zero-Days (DATE)"}, {"color": "#FFA500", "id": "entity_4chan", "label": "entity_4chan", "shape": "dot", "size": 15, "title": "4Chan (CARDINAL)"}, {"color": "#9370DB", "id": "entity_ntlm exploits", "label": "entity_ntlm exploits", "shape": "dot", "size": 15, "title": "NTLM Exploits (ORG)"}, {"color": "#9370DB", "id": "entity_whatsapp spyware \u0026", "label": "entity_whatsapp spyware \u0026", "shape": "dot", "size": 15, "title": "WhatsApp Spyware \u0026 (ORG)"}, {"color": "#9370DB", "id": "entity_excerpt", "label": "entity_excerpt", "shape": "dot", "size": 15, "title": "Excerpt (PERSON)"}, {"color": "#3CB371", "id": "entity_last week", "label": "entity_last week", "shape": "dot", "size": 15, "title": "last week (DATE)"}, {"color": "#9370DB", "id": "entity_norma", "label": "entity_norma", "shape": "dot", "size": 15, "title": "norma (PERSON)"}, {"color": "#3CB371", "id": "entity_zero-day", "label": "entity_zero-day", "shape": "dot", "size": 15, "title": "zero-day (DATE)"}, {"color": "#9370DB", "id": "entity_ntlm", "label": "entity_ntlm", "shape": "dot", "size": 15, "title": "NTLM (ORG)"}, {"color": "#9370DB", "id": "entity_whatsapp", "label": "entity_whatsapp", "shape": "dot", "size": 15, "title": "WhatsApp (ORG)"}, {"color": "#6495ED", "id": "doc_-1692646971733298733", "label": "doc_-1692646971733298733", "shape": "dot", "size": 20, "title": "NEWS ARTICLE: New sophisticate malware SuperCard X targets Androids via NFC relay attacks\n\nSource: Securityaffairs.com\n\nExcerpt: \u2018SuperCard X\u2019 \u2013 a new..."}, {"color": "#9370DB", "id": "entity_androids", "label": "entity_androids", "shape": "dot", "size": 15, "title": "Androids (PERSON)"}, {"color": "#9370DB", "id": "entity_nfc", "label": "entity_nfc", "shape": "dot", "size": 15, "title": "NFC (ORG)"}, {"color": "#9370DB", "id": "entity_securityaffairs.com", "label": "entity_securityaffairs.com", "shape": "dot", "size": 15, "title": "Securityaffairs.com (ORG)"}, {"color": "#9370DB", "id": "entity_atm", "label": "entity_atm", "shape": "dot", "size": 15, "title": "ATM (ORG)"}, {"color": "#9370DB", "id": "entity_android", "label": "entity_android", "shape": "dot", "size": 15, "title": "Android (ORG)"}, {"color": "#9370DB", "id": "entity_malware", "label": "entity_malware", "shape": "dot", "size": 15, "title": "Malware (GPE)"}, {"color": "#9370DB", "id": "entity_nfc relay attacks", "label": "entity_nfc relay attacks", "shape": "dot", "size": 15, "title": "NFC Relay Attacks (ORG)"}, {"color": "#9370DB", "id": "entity_near field communication", "label": "entity_near field communication", "shape": "dot", "size": 15, "title": "Near Field Communication (ORG)"}, {"color": "#6495ED", "id": "doc_7518060459030198731", "label": "doc_7518060459030198731", "shape": "dot", "size": 20, "title": "NEWS ARTICLE: Russia-linked APT29 targets European diplomatic entities with GRAPELOADER malware\n\nSource: Securityaffairs.com\n\nExcerpt: Russia-linked g..."}, {"color": "#9370DB", "id": "entity_russia", "label": "entity_russia", "shape": "dot", "size": 15, "title": "Russia (GPE)"}, {"color": "#FFA500", "id": "entity_european", "label": "entity_european", "shape": "dot", "size": 15, "title": "European (NORP)"}, {"color": "#9370DB", "id": "entity_grapeloader", "label": "entity_grapeloader", "shape": "dot", "size": 15, "title": "GRAPELOADER (ORG)"}, {"color": "#FFA500", "id": "entity_europe", "label": "entity_europe", "shape": "dot", "size": 15, "title": "Europe (LOC)"}, {"color": "#9370DB", "id": "entity_check point research", "label": "entity_check point research", "shape": "dot", "size": 15, "title": "Check Point Research (ORG)"}, {"color": "#9370DB", "id": "entity_svr", "label": "entity_svr", "shape": "dot", "size": 15, "title": "SVR (ORG)"}, {"color": "#9370DB", "id": "entity_cozy bear", "label": "entity_cozy bear", "shape": "dot", "size": 15, "title": "Cozy Bear (PERSON)"}, {"color": "#9370DB", "id": "entity_bluebravo", "label": "entity_bluebravo", "shape": "dot", "size": 15, "title": "BlueBravo (ORG)"}, {"color": "#9370DB", "id": "entity_midnight bli", "label": "entity_midnight bli", "shape": "dot", "size": 15, "title": "Midnight Bli (PERSON)"}, {"color": "#6495ED", "id": "doc_-2773793513826240514", "label": "doc_-2773793513826240514", "shape": "dot", "size": 20, "title": "NEWS ARTICLE: Top bitcoin news right now\n\nSource: Erickimphotography.com\n\nExcerpt: Key Points Bitcoin is currently trading around $85,000, with resear..."}, {"color": "#9370DB", "id": "entity_erickimphotography.com", "label": "entity_erickimphotography.com", "shape": "dot", "size": 15, "title": "Erickimphotography.com (ORG)"}, {"color": "#3CB371", "id": "entity_around $85,000", "label": "entity_around $85,000", "shape": "dot", "size": 15, "title": "around $85,000 (MONEY)"}, {"color": "#3CB371", "id": "entity_139,000", "label": "entity_139,000", "shape": "dot", "size": 15, "title": "139,000 (MONEY)"}, {"color": "#3CB371", "id": "entity_year-end", "label": "entity_year-end", "shape": "dot", "size": 15, "title": "year-end (DATE)"}, {"color": "#9370DB", "id": "entity_econom", "label": "entity_econom", "shape": "dot", "size": 15, "title": "Econom (ORG)"}, {"color": "#3CB371", "id": "entity_approximately $85,000", "label": "entity_approximately $85,000", "shape": "dot", "size": 15, "title": "Approximately $85,000 (MONEY)"}, {"color": "#6495ED", "id": "doc_-5212399915992201422", "label": "doc_-5212399915992201422", "shape": "dot", "size": 20, "title": "NEWS ARTICLE: XenDex Unveils All-In-One Decentralized Exchange With Lending \u0026 Borrowing Functionality on XRP\n\nSource: GlobeNewswire\n\nExcerpt: SYDNEY, ..."}, {"color": "#9370DB", "id": "entity_sydney", "label": "entity_sydney", "shape": "dot", "size": 15, "title": "SYDNEY (GPE)"}, {"color": "#9370DB", "id": "entity_australia", "label": "entity_australia", "shape": "dot", "size": 15, "title": "Australia (GPE)"}, {"color": "#3CB371", "id": "entity_april 20, 2025", "label": "entity_april 20, 2025", "shape": "dot", "size": 15, "title": "April 20, 2025 (DATE)"}, {"color": "#9370DB", "id": "entity_globe newswire", "label": "entity_globe newswire", "shape": "dot", "size": 15, "title": "GLOBE NEWSWIRE (ORG)"}, {"color": "#FFA500", "id": "entity_xendex", "label": "entity_xendex", "shape": "dot", "size": 15, "title": "XenDex (PRODUCT)"}, {"color": "#9370DB", "id": "entity_launch", "label": "entity_launch", "shape": "dot", "size": 15, "title": "Launch (GPE)"}, {"color": "#FFA500", "id": "entity_one", "label": "entity_one", "shape": "dot", "size": 15, "title": "one (CARDINAL)"}, {"color": "#9370DB", "id": "entity_dex", "label": "entity_dex", "shape": "dot", "size": 15, "title": "DEX (ORG)"}]);
+                  edges = new vis.DataSet([{"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_youtube", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_al makkah tech \u0026 business hub\n\ndescription", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_tomorrow", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_today", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_bitcoin", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_solana", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_xrp, ethereum", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_daily", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_bitcoinnews", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_#", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_2025", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_china", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_ethereum", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_almakkahtech", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_barter partnership", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_complete kyc", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_crypto premium group", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_email", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_https://www.youtube.com/c/almakkahtechbyusmanhussain\n ", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_al makkah tech", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_5443", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_bitcoin (btc),", "width": 2}, {"from": "doc_-4591769649304766679", "title": "contains", "to": "entity_xrp", "width": 2}, {"dashes": true, "from": "doc_-4591769649304766679", "title": "similarity: 0.70", "to": "doc_-3472005346782005771", "width": 7.022999038669154}, {"from": "entity_youtube", "title": "contains", "to": "doc_9213913008728259454", "width": 2}, {"from": "entity_youtube", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_youtube", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_youtube", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_youtube", "title": "contains", "to": "doc_-6053154265852359881", "width": 2}, {"from": "entity_today", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_today", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_bitcoin", "title": "contains", "to": "doc_-2773793513826240514", "width": 2}, {"from": "entity_#", "title": "contains", "to": "doc_9213913008728259454", "width": 2}, {"from": "entity_#", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_#", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_#", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_2025", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_email", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_email", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_xrp", "title": "contains", "to": "doc_-5212399915992201422", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_crypto wallet", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_nft", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_scam", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_3rd", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_telegram", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_2nd", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_facebook:- https://www.facebook.com/profile.php?id=100008836147089", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_#treasurenftwithdrawalbankaccount #", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_alhamdulillah", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_30450", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_pi network", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_binance", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_30,450", "width": 2}, {"from": "doc_9213913008728259454", "title": "contains", "to": "entity_social media promotion:*", "width": 2}, {"dashes": true, "from": "doc_9213913008728259454", "title": "similarity: 0.79", "to": "doc_-3132214061749869150", "width": 7.937387990155984}, {"dashes": true, "from": "doc_9213913008728259454", "title": "similarity: 0.71", "to": "doc_-3472005346782005771", "width": 7.1394794919976}, {"dashes": true, "from": "doc_9213913008728259454", "title": "similarity: 0.99", "to": "doc_4057818637348847903", "width": 9.873767944248007}, {"from": "entity_nft", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_nft", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_scam", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_3rd", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_telegram", "title": "contains", "to": "doc_-3132214061749869150", "width": 2}, {"from": "entity_telegram", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_telegram", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_2nd", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_facebook:- https://www.facebook.com/profile.php?id=100008836147089", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_#treasurenftwithdrawalbankaccount #", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_pi network", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_pi network", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_binance", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_treasure nft new update", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_treasure nft", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_treasure nft full detail", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_crypto news", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_hai ek", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_tuft token", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_ke baare mein", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_dekhne ko milega:-", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_hai", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_mein ho", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_ya nfts mein smart", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_ho", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_yeh", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_ko", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_best crypto exchange", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_crypto nft", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_update video\ntreasure nft solana address update", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_buy crypto\ncrypto market", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_48068", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_treasure nft real or fake", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_treasure nft scam or not", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_tuft", "width": 2}, {"from": "doc_-3132214061749869150", "title": "contains", "to": "entity_twitter", "width": 2}, {"dashes": true, "from": "doc_-3132214061749869150", "title": "similarity: 0.73", "to": "doc_-3472005346782005771", "width": 7.319929737923291}, {"dashes": true, "from": "doc_-3132214061749869150", "title": "similarity: 0.78", "to": "doc_4057818637348847903", "width": 7.817984237248656}, {"from": "entity_treasure nft", "title": "contains", "to": "doc_4057818637348847903", "width": 2}, {"from": "entity_hai", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "entity_ho", "title": "contains", "to": "doc_-3472005346782005771", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_pi network new update", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_pi coin", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_crypto trading", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_pi coin update", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_pi", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_108 millions", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_hai ki pi coin ka", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_complete", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_dekhiye pi network", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_kafi", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_queries:-", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_pi\npi network", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_pi\npi network kyc verification\npi network latest news\npi coin global effect\npi network challanges\npi network coin\npi coin listing\npi coin update\npi network launch", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_11184", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_108 million", "width": 2}, {"from": "doc_-3472005346782005771", "title": "contains", "to": "entity_11,184", "width": 2}, {"dashes": true, "from": "doc_-3472005346782005771", "title": "similarity: 0.72", "to": "doc_4057818637348847903", "width": 7.174231644262184}, {"from": "doc_4057818637348847903", "title": "contains", "to": "entity_42166", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_thn weekly", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_zero-days", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_4chan", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_ntlm exploits", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_whatsapp spyware \u0026", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_excerpt", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_last week", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_norma", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_zero-day", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_ntlm", "width": 2}, {"from": "doc_-6053154265852359881", "title": "contains", "to": "entity_whatsapp", "width": 2}, {"from": "entity_excerpt", "title": "contains", "to": "doc_-1692646971733298733", "width": 2}, {"from": "entity_excerpt", "title": "contains", "to": "doc_7518060459030198731", "width": 2}, {"from": "entity_excerpt", "title": "contains", "to": "doc_-2773793513826240514", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_androids", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_nfc", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_securityaffairs.com", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_atm", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_android", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_malware", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_nfc relay attacks", "width": 2}, {"from": "doc_-1692646971733298733", "title": "contains", "to": "entity_near field communication", "width": 2}, {"from": "entity_securityaffairs.com", "title": "contains", "to": "doc_7518060459030198731", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_russia", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_european", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_grapeloader", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_europe", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_check point research", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_svr", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_cozy bear", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_bluebravo", "width": 2}, {"from": "doc_7518060459030198731", "title": "contains", "to": "entity_midnight bli", "width": 2}, {"from": "doc_-2773793513826240514", "title": "contains", "to": "entity_erickimphotography.com", "width": 2}, {"from": "doc_-2773793513826240514", "title": "contains", "to": "entity_around $85,000", "width": 2}, {"from": "doc_-2773793513826240514", "title": "contains", "to": "entity_139,000", "width": 2}, {"from": "doc_-2773793513826240514", "title": "contains", "to": "entity_year-end", "width": 2}, {"from": "doc_-2773793513826240514", "title": "contains", "to": "entity_econom", "width": 2}, {"from": "doc_-2773793513826240514", "title": "contains", "to": "entity_approximately $85,000", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_sydney", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_australia", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_april 20, 2025", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_globe newswire", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_xendex", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_launch", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_one", "width": 2}, {"from": "doc_-5212399915992201422", "title": "contains", "to": "entity_dex", "width": 2}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "repulsion": {
+            "centralGravity": 0.2,
+            "damping": 0.09,
+            "nodeDistance": 150,
+            "springConstant": 0.05,
+            "springLength": 200
+        },
+        "solver": "repulsion",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
