@@ -59,8 +59,8 @@ class ScriptGenerator:
                 try:
                     self.models = genai.list_models()
                     self.gemini_models = [m for m in self.models if "gemini" in m.name.lower()]
-                    self.model = genai.GenerativeModel(model_name="gemini-2.0-flash")
-                    logger.info(f"Successfully initialized Gemini model: {model_name}")
+                    self.model = genai.GenerativeModel(model_name="gemini-pro")
+                    logger.info(f"Successfully initialized Gemini model: gemini-pro")
                 except Exception as e:
                     logger.error(f"Error initializing Gemini model: {e}")
                     self.model = None

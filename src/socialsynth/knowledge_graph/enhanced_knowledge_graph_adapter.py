@@ -569,88 +569,32 @@ class EnhancedKnowledgeGraphAdapter(KnowledgeGraphBuilderAdapter):
             # Create a pyvis network
             net = Network(height=self.height, width=self.width, directed=True, notebook=False)
             
-            # Configure enhanced physics for better layout
-            physics_options = {
-                "solver": "forceAtlas2Based",
-                "forceAtlas2Based": {
-                    "gravitationalConstant": -120,
-                    "centralGravity": 0.01,
-                    "springLength": 180,
-                    "springConstant": 0.1,
-                    "damping": 0.3,
-                    "avoidOverlap": 1.0
-                },
-                "stabilization": {
-                    "enabled": True,
-                    "iterations": 1500,
-                    "updateInterval": 25
-                }
-            }
-            
-            # Configure enhanced options
+            # Configure network graph options
             options = {
-                "physics": physics_options,
-                "interaction": {
-                    "navigationButtons": True,
-                    "keyboard": {
-                        "enabled": True,
-                        "speed": {"x": 10, "y": 10, "zoom": 0.1}
-                    },
-                    "tooltipDelay": 200,
-                    "hideEdgesOnDrag": True,
-                    "multiselect": True,
-                    "dragNodes": True,
-                    "hover": True
+                "nodes": {
+                    "font": {"size": 14, "face": "arial"},
+                    "scaling": {"label": {"enabled": True}}
                 },
                 "edges": {
-                    "smooth": {
-                        "type": "continuous",
-                        "forceDirection": "none"
-                    },
-                    "arrows": {
-                        "to": {"enabled": True, "scaleFactor": 0.5}
-                    },
-                    "color": {"inherit": False, "color": "#666666", "opacity": 0.8},
-                    "font": {"size": 12, "align": "middle"}
+                    "font": {"size": 12, "face": "arial"},
+                    "smooth": {"type": "continuous"},
+                    "arrows": {"to": {"enabled": True, "scaleFactor": 0.5}}
                 },
-                "nodes": {
-                    "shape": "dot",
-                    "font": {"size": 14, "face": "Arial", "bold": False},
-                    "borderWidth": 2,
-                    "shadow": True
+                "physics": {
+                    "barnesHut": {"gravitationalConstant": -2000, "springLength": 250, "springConstant": 0.001},
+                    "stabilization": {"iterations": 2500}
                 },
-                "groups": {
-                    "document": {"color": self.node_colors["document"], "shape": "square", "size": 25},
-                    "concept": {"color": self.node_colors["concept"], "size": 15},
-                    "person": {"color": self.node_colors["person"], "size": 20},
-                    "organization": {"color": self.node_colors["organization"], "size": 20},
-                    "location": {"color": self.node_colors["location"], "size": 18},
-                    "event": {"color": self.node_colors["event"], "size": 18},
-                    "date": {"color": self.node_colors["date"], "size": 18},
-                    "action": {"color": self.node_colors["action"], "size": 15},
-                    "other": {"color": self.node_colors["other"], "size": 15}
+                "interaction": {
+                    "hover": True,
+                    "navigationButtons": True,
+                    "keyboard": True
                 }
             }
             
-            try:
-                # Use set_options method instead of directly setting options property
-                # This fixes the 'str' object has no attribute 'to_json' error
-                net.set_options(json.dumps(options))
-            except Exception as e:
-                logger.error(f"EnhancedAdapter: Error setting options: {e}")
-                # Try alternative method for setting options
-                try:
-                    logger.info("Trying alternative approach for network options")
-                    # Apply individual physics settings
-                    net.barnes_hut(
-                        gravity=-120,
-                        central_gravity=0.01,
-                        spring_length=180,
-                        spring_strength=0.1,
-                        damping=0.3
-                    )
-                except Exception as alt_e:
-                    logger.error(f"Alternative approach also failed: {alt_e}")
+            # Create network with specified options (as a dict, not a string)
+            net = Network(height=self.height, width=self.width, notebook=False, directed=True,
+                         heading=f"Knowledge Graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
+            net.options = options  # Set options as a dict, not a string
             
             # Add nodes to the visualization with enhanced styling
             logger.info(f"Adding {graph.number_of_nodes()} nodes to visualization (enhanced)")
